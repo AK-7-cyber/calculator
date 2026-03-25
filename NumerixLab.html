@@ -1,0 +1,989 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>NumerixLab — Numerical Methods Calculator</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{font-family:'Plus Jakarta Sans',sans-serif;background:#0d0d1a;color:#f0f0ff;overflow-x:hidden}
+:root{
+  --v:#7c3aed;--vm:#a78bfa;
+  --g:#059669;--gm:#34d399;
+  --o:#ea580c;--om:#fb923c;
+  --mono:'JetBrains Mono',monospace;
+}
+#bg{position:fixed;inset:0;z-index:0;}
+.app{position:relative;z-index:1;min-height:100vh;display:flex;flex-direction:column;}
+
+/* ── NAVBAR ── */
+.nav{display:flex;align-items:center;justify-content:space-between;padding:0 2.5rem;height:64px;background:rgba(13,13,26,.78);backdrop-filter:blur(24px);border-bottom:1px solid rgba(255,255,255,.07);position:sticky;top:0;z-index:100;}
+.brand{display:flex;align-items:center;gap:10px;font-size:1.15rem;font-weight:800;letter-spacing:-.02em;color:#f0f0ff;text-decoration:none;}
+.brand-gem{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#6d28d9,#059669);display:flex;align-items:center;justify-content:center;font-size:1.15rem;font-weight:700;box-shadow:0 4px 20px rgba(109,40,217,.55);}
+.nav-pills{display:flex;gap:4px;}
+.npill{padding:.38rem 1rem;border-radius:8px;font-size:.8rem;font-weight:600;cursor:pointer;border:none;background:transparent;color:rgba(240,240,255,.45);transition:all .18s;}
+.npill:hover{color:#f0f0ff;background:rgba(255,255,255,.07);}
+.npill.av{background:rgba(124,58,237,.22);color:#a78bfa;box-shadow:inset 0 0 0 1px rgba(124,58,237,.45);}
+.npill.ag{background:rgba(5,150,105,.22);color:#34d399;box-shadow:inset 0 0 0 1px rgba(5,150,105,.45);}
+.npill.ao{background:rgba(234,88,12,.22);color:#fb923c;box-shadow:inset 0 0 0 1px rgba(234,88,12,.45);}
+.nav-badge{font-family:var(--mono);font-size:.6rem;color:rgba(240,240,255,.25);border:1px solid rgba(255,255,255,.1);padding:.22rem .75rem;border-radius:100px;}
+
+/* ── HERO ── */
+.hero{text-align:center;padding:3.5rem 2rem 2.5rem;background:linear-gradient(180deg,rgba(124,58,237,.07),transparent);}
+.hero-eye{font-family:var(--mono);font-size:.68rem;letter-spacing:.18em;text-transform:uppercase;color:rgba(167,139,250,.65);margin-bottom:1rem;display:flex;align-items:center;justify-content:center;gap:8px;}
+.hero-eye::before,.hero-eye::after{content:'';flex:1;max-width:60px;height:1px;background:rgba(167,139,250,.2);}
+.hero-title{font-size:clamp(2.2rem,5vw,3.8rem);font-weight:800;letter-spacing:-.03em;line-height:1.1;margin-bottom:.75rem;}
+.hero-title span{background:linear-gradient(90deg,#a78bfa,#34d399,#fb923c,#a78bfa);background-size:250% auto;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:shim 5s linear infinite;}
+@keyframes shim{to{background-position:250% center}}
+.hero-sub{color:rgba(240,240,255,.45);font-size:.93rem;max-width:480px;margin:0 auto 2.5rem;line-height:1.7;}
+.methods{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;}
+.msel{display:flex;align-items:center;gap:10px;padding:.7rem 1.4rem;border-radius:14px;cursor:pointer;border:1.5px solid transparent;transition:all .2s;font-weight:700;font-size:.82rem;position:relative;overflow:hidden;}
+.msel-v{background:rgba(124,58,237,.1);border-color:rgba(124,58,237,.28);color:#a78bfa;}
+.msel-g{background:rgba(5,150,105,.1);border-color:rgba(5,150,105,.28);color:#34d399;}
+.msel-o{background:rgba(234,88,12,.1);border-color:rgba(234,88,12,.28);color:#fb923c;}
+.msel-v.on,.msel-v:hover{border-color:#a78bfa;box-shadow:0 6px 28px rgba(124,58,237,.4),inset 0 0 40px rgba(124,58,237,.12);}
+.msel-g.on,.msel-g:hover{border-color:#34d399;box-shadow:0 6px 28px rgba(5,150,105,.4),inset 0 0 40px rgba(5,150,105,.12);}
+.msel-o.on,.msel-o:hover{border-color:#fb923c;box-shadow:0 6px 28px rgba(234,88,12,.4),inset 0 0 40px rgba(234,88,12,.12);}
+.msel-ico{font-size:1.25rem;}
+.msel-name{font-size:.83rem;font-weight:700;line-height:1.2;display:block;}
+.msel-sub{font-size:.6rem;opacity:.6;text-transform:uppercase;letter-spacing:.07em;display:block;}
+
+/* ── CONTENT ── */
+.content{flex:1;max-width:1120px;width:100%;margin:0 auto;padding:0 2rem 5rem;}
+.pane{display:none;}
+.pane.on{display:block;animation:fadeUp .32s cubic-bezier(.34,1.56,.64,1);}
+@keyframes fadeUp{from{opacity:0;transform:translateY(18px);}to{opacity:1;transform:translateY(0);}}
+
+/* ── PANEL HEADER ── */
+.ph{display:flex;align-items:flex-start;gap:16px;margin:2rem 0 1.75rem;}
+.ph-num{font-family:var(--mono);font-size:3rem;font-weight:600;line-height:1;letter-spacing:-.06em;opacity:.14;flex-shrink:0;}
+.ph-title{font-size:1.7rem;font-weight:800;letter-spacing:-.025em;margin-bottom:.35rem;}
+.ph-desc{color:rgba(240,240,255,.45);font-size:.86rem;line-height:1.75;max-width:600px;margin-bottom:.6rem;}
+.ph-formula{font-family:var(--mono);font-size:.88rem;padding:.45rem 1rem;border-radius:8px;display:inline-block;}
+
+/* ── GRID ── */
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;align-items:start;}
+@media(max-width:800px){.grid2{grid-template-columns:1fr;}}
+
+/* ── INPUT CARD ── */
+.icard{border-radius:22px;overflow:hidden;border:1px solid rgba(255,255,255,.08);}
+.icard-hd{display:flex;align-items:center;gap:8px;padding:.9rem 1.4rem;font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.09em;}
+.icard-bd{padding:1.4rem;}
+.icard-v{background:linear-gradient(160deg,rgba(109,40,217,.2),rgba(124,58,237,.07));border-top:3px solid #7c3aed!important;}
+.icard-v .icard-hd{background:rgba(109,40,217,.22);border-bottom:1px solid rgba(109,40,217,.22);color:#a78bfa;}
+.icard-g{background:linear-gradient(160deg,rgba(4,120,87,.2),rgba(5,150,105,.07));border-top:3px solid #059669!important;}
+.icard-g .icard-hd{background:rgba(4,120,87,.22);border-bottom:1px solid rgba(4,120,87,.22);color:#34d399;}
+.icard-o{background:linear-gradient(160deg,rgba(194,65,12,.2),rgba(234,88,12,.07));border-top:3px solid #ea580c!important;}
+.icard-o .icard-hd{background:rgba(194,65,12,.22);border-bottom:1px solid rgba(194,65,12,.22);color:#fb923c;}
+
+/* ── FORM ── */
+.flbl{font-size:.67rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:rgba(240,240,255,.38);margin-bottom:.38rem;display:flex;align-items:center;gap:6px;}
+.fopt{font-size:.57rem;padding:.1rem .4rem;border-radius:4px;background:rgba(255,255,255,.08);color:rgba(240,240,255,.38);}
+.fi{width:100%;padding:.7rem 1rem;border-radius:10px;background:rgba(0,0,0,.32);border:1px solid rgba(255,255,255,.1);color:#f0f0ff;font-family:'Plus Jakarta Sans',sans-serif;font-size:.9rem;outline:none;transition:all .18s;display:block;}
+.fi:focus{background:rgba(0,0,0,.5);}
+.fi.mono{font-family:var(--mono)!important;font-size:.88rem!important;letter-spacing:.02em;}
+.fv .fi:focus{border-color:rgba(124,58,237,.55);box-shadow:0 0 0 3px rgba(124,58,237,.13);}
+.fg .fi:focus{border-color:rgba(5,150,105,.55);box-shadow:0 0 0 3px rgba(5,150,105,.13);}
+.fo .fi:focus{border-color:rgba(234,88,12,.55);box-shadow:0 0 0 3px rgba(234,88,12,.13);}
+.fv .fi.mono{color:#a78bfa;}
+.fg .fi.mono{color:#34d399;}
+.fo .fi.mono{color:#fb923c;}
+.fhint{font-family:var(--mono);font-size:.63rem;color:rgba(240,240,255,.22);margin:.3rem 0 .9rem;line-height:1.6;}
+.fgrp{margin-bottom:1rem;}
+.fg2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:1rem;}
+.fg3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:1rem;}
+
+/* ── SYNTAX GUIDE ── */
+.syn-box{
+  border-radius:10px;padding:.8rem 1rem;margin-bottom:1rem;
+  font-family:var(--mono);font-size:.68rem;line-height:1.9;
+  background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.07);
+}
+.syn-title{font-size:.6rem;text-transform:uppercase;letter-spacing:.12em;margin-bottom:.5rem;opacity:.5;}
+.syn-row{display:flex;gap:1rem;flex-wrap:wrap;}
+.syn-item{display:flex;align-items:center;gap:.4rem;}
+.syn-from{color:#f0f0ff;opacity:.85;}
+.syn-arr{color:rgba(255,255,255,.25);}
+.syn-to{color:rgba(255,255,255,.35);}
+.syn-v .syn-title{color:#a78bfa;}
+.syn-g .syn-title{color:#34d399;}
+.syn-o .syn-title{color:#fb923c;}
+
+/* ── PRESETS ── */
+.prw{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:1.2rem;align-items:center;}
+.prlbl{font-size:.63rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:rgba(240,240,255,.28);}
+.prbtn{font-family:var(--mono);font-size:.68rem;padding:.28rem .7rem;border-radius:6px;cursor:pointer;border:1px solid rgba(255,255,255,.11);background:rgba(255,255,255,.05);color:rgba(240,240,255,.55);transition:all .15s;}
+.prbtn:hover{background:rgba(255,255,255,.12);color:#f0f0ff;transform:translateY(-1px);}
+
+/* ── CALC BUTTON ── */
+.cbtn{width:100%;padding:.88rem;border-radius:13px;border:none;font-family:'Plus Jakarta Sans',sans-serif;font-size:.95rem;font-weight:800;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px;letter-spacing:.01em;}
+.cbtn:hover{transform:translateY(-2px);}
+.cbtn:active{transform:scale(.98);}
+.cbtn .arr{font-size:1.1rem;transition:transform .2s;}
+.cbtn:hover .arr{transform:translateX(5px);}
+.cbtn-v{background:linear-gradient(135deg,#5b21b6,#7c3aed,#8b5cf6);color:#fff;box-shadow:0 8px 30px rgba(109,40,217,.5);}
+.cbtn-v:hover{box-shadow:0 14px 44px rgba(109,40,217,.65);}
+.cbtn-g{background:linear-gradient(135deg,#065f46,#059669,#10b981);color:#fff;box-shadow:0 8px 30px rgba(4,120,87,.5);}
+.cbtn-g:hover{box-shadow:0 14px 44px rgba(4,120,87,.65);}
+.cbtn-o{background:linear-gradient(135deg,#9a3412,#ea580c,#f97316);color:#fff;box-shadow:0 8px 30px rgba(194,65,12,.5);}
+.cbtn-o:hover{box-shadow:0 14px 44px rgba(194,65,12,.65);}
+
+/* ── RESULT CARD ── */
+.rcard{border-radius:22px;overflow:hidden;border:1px solid rgba(255,255,255,.08);display:none;animation:fadeUp .32s cubic-bezier(.34,1.56,.64,1);}
+.rcard.show{display:block;}
+.rcard-v{border-top:3px solid #7c3aed!important;}
+.rcard-g{border-top:3px solid #059669!important;}
+.rcard-o{border-top:3px solid #ea580c!important;}
+.rhero{padding:1.6rem 1.8rem;}
+.rhero-v{background:linear-gradient(135deg,rgba(109,40,217,.18),rgba(124,58,237,.07));}
+.rhero-g{background:linear-gradient(135deg,rgba(4,120,87,.18),rgba(5,150,105,.07));}
+.rhero-o{background:linear-gradient(135deg,rgba(194,65,12,.18),rgba(234,88,12,.07));}
+.rtag{font-family:var(--mono);font-size:.6rem;text-transform:uppercase;letter-spacing:.14em;margin-bottom:.45rem;opacity:.65;}
+.rval{font-family:var(--mono);font-size:2.1rem;font-weight:600;line-height:1.2;margin-bottom:.45rem;}
+.rval-v{color:#c4b5fd;} .rval-g{color:#6ee7b7;} .rval-o{color:#fdba74;}
+.rmeta{font-family:var(--mono);font-size:.75rem;color:rgba(240,240,255,.5);}
+.rnote{font-family:var(--mono);font-size:.67rem;color:rgba(240,240,255,.33);margin-top:.3rem;}
+.rbody{border-top:1px solid rgba(255,255,255,.07);}
+.tscroll{overflow:auto;max-height:310px;}
+.rtbl{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:.74rem;}
+.rtbl th{padding:.6rem 1rem;text-align:left;font-size:.6rem;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:rgba(240,240,255,.32);background:rgba(0,0,0,.25);border-bottom:1px solid rgba(255,255,255,.06);white-space:nowrap;position:sticky;top:0;z-index:2;}
+.rtbl td{padding:.52rem 1rem;border-bottom:1px solid rgba(255,255,255,.035);color:rgba(240,240,255,.72);white-space:nowrap;}
+.rtbl tr:hover td{background:rgba(255,255,255,.025);}
+.rtbl tr.fin td{font-weight:600;background:rgba(255,255,255,.045)!important;color:#f0f0ff;}
+.rtbl tr.tot td{background:rgba(255,255,255,.055)!important;font-weight:700;color:#f0f0ff;}
+.ttrunc{text-align:center;color:rgba(240,240,255,.22);font-size:.63rem;padding:.5rem;}
+.empty{padding:2.8rem 2rem;text-align:center;color:rgba(240,240,255,.18);font-size:.85rem;border:1.5px dashed rgba(255,255,255,.07);border-radius:22px;}
+.empty-ico{font-size:2.4rem;display:block;margin-bottom:.7rem;opacity:.5;}
+
+/* ── INFO STRIPS ── */
+.strips{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:1.25rem;}
+@media(max-width:600px){.strips{grid-template-columns:1fr;}}
+.strip{padding:1rem 1.2rem;border-radius:14px;background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.07);transition:transform .18s,border-color .18s;}
+.strip:hover{transform:translateY(-2px);}
+.strip-v:hover{border-color:rgba(124,58,237,.3);}
+.strip-g:hover{border-color:rgba(5,150,105,.3);}
+.strip-o:hover{border-color:rgba(234,88,12,.3);}
+.strip-t{font-family:var(--mono);font-size:.6rem;text-transform:uppercase;letter-spacing:.12em;margin-bottom:.38rem;}
+.strip-v .strip-t{color:#a78bfa;} .strip-g .strip-t{color:#34d399;} .strip-o .strip-t{color:#fb923c;}
+.strip-b{font-size:.8rem;color:rgba(240,240,255,.45);line-height:1.65;}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:1.6rem;right:1.6rem;z-index:9999;padding:.8rem 1.4rem;border-radius:12px;font-family:'Plus Jakarta Sans',sans-serif;font-size:.83rem;font-weight:600;opacity:0;transform:translateY(10px);transition:all .26s cubic-bezier(.34,1.56,.64,1);pointer-events:none;max-width:340px;border:1px solid transparent;}
+.toast.show{opacity:1;transform:translateY(0);}
+.toast.ok{background:rgba(5,150,105,.15);border-color:rgba(52,211,153,.32);color:#34d399;}
+.toast.err{background:rgba(239,68,68,.12);border-color:rgba(248,113,113,.28);color:#fca5a5;}
+
+/* ── GRAPH TABS ── */
+.view-tabs{display:flex;gap:0;border-bottom:1px solid rgba(255,255,255,.07);}
+.vtab{flex:1;padding:.6rem;font-size:.75rem;font-weight:700;text-align:center;cursor:pointer;border:none;background:transparent;color:rgba(240,240,255,.35);transition:all .18s;letter-spacing:.04em;text-transform:uppercase;}
+.vtab:hover{color:rgba(240,240,255,.7);}
+.vtab.on-v{color:#a78bfa;border-bottom:2px solid #7c3aed;background:rgba(124,58,237,.07);}
+.vtab.on-g{color:#34d399;border-bottom:2px solid #059669;background:rgba(5,150,105,.07);}
+.vtab.on-o{color:#fb923c;border-bottom:2px solid #ea580c;background:rgba(234,88,12,.07);}
+.view-body{display:none;}
+.view-body.on{display:block;}
+.chart-area{padding:1.2rem 1.4rem;background:rgba(0,0,0,.15);}
+.chart-title{font-family:var(--mono);font-size:.6rem;text-transform:uppercase;letter-spacing:.12em;margin-bottom:.75rem;}
+.chart-title-v{color:#a78bfa;} .chart-title-g{color:#34d399;} .chart-title-o{color:#fb923c;}
+.chart-wrap{position:relative;height:220px;margin-bottom:1.2rem;}
+.chart-wrap:last-child{margin-bottom:0;}
+.chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;}
+@media(max-width:600px){.chart-grid{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+<canvas id="bg"></canvas>
+<div class="app">
+
+<!-- NAVBAR -->
+<nav class="nav">
+  <a class="brand" href="#">
+    <div class="brand-gem">∂</div>
+    NumerixLab
+  </a>
+  <div class="nav-pills">
+    <button class="npill av" id="nb-v" onclick="sw('v')">Newton–Raphson</button>
+    <button class="npill" id="nb-g" onclick="sw('g')">Lagrange</button>
+    <button class="npill" id="nb-o" onclick="sw('o')">Euler's Method</button>
+  </div>
+  <div class="nav-badge">24UMA261 · SNM</div>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-eye">Statistics &amp; Numerical Methods — Unit III</div>
+  <h1 class="hero-title"><span>Numerical Methods Calculator</span></h1>
+  <p class="hero-sub">Type expressions naturally — <strong>x^2</strong>, <strong>sin(x)</strong>, <strong>e^x</strong>, <strong>sqrt(x)</strong> — step‑by‑step results with 8‑decimal precision.</p>
+  <div class="methods">
+    <div class="msel msel-v on" id="ms-v" onclick="sw('v')">
+      <span class="msel-ico">⊘</span>
+      <div><span class="msel-name">Newton–Raphson</span><span class="msel-sub">Root Finding</span></div>
+    </div>
+    <div class="msel msel-g" id="ms-g" onclick="sw('g')">
+      <span class="msel-ico">◈</span>
+      <div><span class="msel-name">Lagrange</span><span class="msel-sub">Interpolation</span></div>
+    </div>
+    <div class="msel msel-o" id="ms-o" onclick="sw('o')">
+      <span class="msel-ico">⊛</span>
+      <div><span class="msel-name">Euler's Method</span><span class="msel-sub">ODE Solver</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="content">
+
+<!-- ══════ NEWTON RAPHSON ══════ -->
+<div class="pane on" id="pane-v">
+  <div class="ph">
+    <div class="ph-num" style="color:#7c3aed">01</div>
+    <div>
+      <div class="ph-title">Newton–Raphson Method</div>
+      <div class="ph-desc">Find roots of f(x)=0 using the tangent line. Quadratic convergence — decimal places roughly double each iteration.</div>
+      <div class="ph-formula" style="background:rgba(124,58,237,.14);color:#a78bfa;">x<sub>n+1</sub> = x<sub>n</sub> − f(x<sub>n</sub>) / f′(x<sub>n</sub>)</div>
+    </div>
+  </div>
+  <div class="grid2">
+    <div class="icard icard-v fv">
+      <div class="icard-hd">⚙ Configure Parameters</div>
+      <div class="icard-bd">
+
+        <!-- SYNTAX GUIDE -->
+        <div class="syn-box syn-v">
+          <div class="syn-title">Supported Syntax</div>
+          <div class="syn-row">
+            <div class="syn-item"><span class="syn-from">x^2</span><span class="syn-arr">→</span><span class="syn-to">x²</span></div>
+            <div class="syn-item"><span class="syn-from">x^3</span><span class="syn-arr">→</span><span class="syn-to">x³</span></div>
+            <div class="syn-item"><span class="syn-from">2x</span><span class="syn-arr">→</span><span class="syn-to">2·x</span></div>
+            <div class="syn-item"><span class="syn-from">sin(x)</span><span class="syn-arr">→</span><span class="syn-to">sin</span></div>
+            <div class="syn-item"><span class="syn-from">cos(x)</span><span class="syn-arr">→</span><span class="syn-to">cos</span></div>
+            <div class="syn-item"><span class="syn-from">tan(x)</span><span class="syn-arr">→</span><span class="syn-to">tan</span></div>
+            <div class="syn-item"><span class="syn-from">e^x</span><span class="syn-arr">→</span><span class="syn-to">eˣ</span></div>
+            <div class="syn-item"><span class="syn-from">ln(x)</span><span class="syn-arr">→</span><span class="syn-to">ln</span></div>
+            <div class="syn-item"><span class="syn-from">log(x)</span><span class="syn-arr">→</span><span class="syn-to">log₁₀</span></div>
+            <div class="syn-item"><span class="syn-from">sqrt(x)</span><span class="syn-arr">→</span><span class="syn-to">√x</span></div>
+            <div class="syn-item"><span class="syn-from">|x|</span><span class="syn-arr">→</span><span class="syn-to">|x|</span></div>
+            <div class="syn-item"><span class="syn-from">pi</span><span class="syn-arr">→</span><span class="syn-to">π</span></div>
+          </div>
+        </div>
+
+        <div class="fgrp">
+          <div class="flbl">f(x)</div>
+          <input class="fi mono" id="v-fx" value="x^3 - 2x - 5" placeholder="e.g. x^3 - 2x - 5"/>
+        </div>
+        <div class="fgrp">
+          <div class="flbl">f′(x) <span class="fopt">optional — auto if blank</span></div>
+          <input class="fi mono" id="v-df" value="3x^2 - 2" placeholder="e.g. 3x^2 - 2"/>
+        </div>
+        <div class="fg3">
+          <div><div class="flbl">x₀ initial</div><input class="fi" id="v-x0" type="number" value="2" step="any"/></div>
+          <div><div class="flbl">Tolerance ε</div><input class="fi" id="v-tol" type="number" value="0.0001" step="any"/></div>
+          <div><div class="flbl">Max iter</div><input class="fi" id="v-mi" type="number" value="50"/></div>
+        </div>
+        <div class="prw">
+          <span class="prlbl">Presets:</span>
+          <button class="prbtn" onclick="vp('x^3 - 2x - 5','3x^2 - 2',2)">x³−2x−5</button>
+          <button class="prbtn" onclick="vp('x^2 - 2','2x',1.5)">√2</button>
+          <button class="prbtn" onclick="vp('cos(x) - x','-sin(x) - 1',1)">cos(x)−x</button>
+          <button class="prbtn" onclick="vp('e^x - 3x','e^x - 3',1)">eˣ−3x</button>
+          <button class="prbtn" onclick="vp('x^3 - x - 2','3x^2 - 1',1.5)">x³−x−2</button>
+          <button class="prbtn" onclick="vp('sin(x) - x/2','cos(x) - 0.5',1.5)">sin(x)−x/2</button>
+        </div>
+        <button class="cbtn cbtn-v" onclick="runV()">Calculate Root <span class="arr">→</span></button>
+      </div>
+    </div>
+    <div>
+      <div class="rcard rcard-v" id="rc-v">
+        <div class="rhero rhero-v">
+          <div class="rtag" style="color:#a78bfa">Root Found</div>
+          <div class="rval rval-v" id="rv-val">—</div>
+          <div class="rmeta" id="rv-meta"></div>
+          <div class="rnote" id="rv-note"></div>
+        </div>
+        <div class="view-tabs">
+          <button class="vtab on-v" id="vt-v-tbl" onclick="vswitch('v','tbl')">📋 Table</button>
+          <button class="vtab" id="vt-v-fn"  onclick="vswitch('v','fn')">📈 f(x) Curve</button>
+          <button class="vtab" id="vt-v-err" onclick="vswitch('v','err')">🎯 Convergence</button>
+        </div>
+        <div class="view-body on" id="vb-v-tbl">
+          <div class="rbody"><div class="tscroll">
+            <table class="rtbl">
+              <thead><tr><th>n</th><th>xₙ</th><th>f(xₙ)</th><th>f′(xₙ)</th><th>xₙ₊₁</th><th>|error|</th></tr></thead>
+              <tbody id="rv-tb"></tbody>
+            </table>
+          </div></div>
+        </div>
+        <div class="view-body" id="vb-v-fn">
+          <div class="chart-area">
+            <div class="chart-title chart-title-v">f(x) Curve with Root &amp; Iteration Points</div>
+            <div class="chart-wrap"><canvas id="chart-v-fn"></canvas></div>
+          </div>
+        </div>
+        <div class="view-body" id="vb-v-err">
+          <div class="chart-area">
+            <div class="chart-grid">
+              <div>
+                <div class="chart-title chart-title-v">Error per Iteration (|xₙ₊₁ − xₙ|)</div>
+                <div class="chart-wrap"><canvas id="chart-v-err"></canvas></div>
+              </div>
+              <div>
+                <div class="chart-title chart-title-v">f(xₙ) Approaching Zero</div>
+                <div class="chart-wrap"><canvas id="chart-v-fx"></canvas></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="empty" id="ev-empty"><span class="empty-ico">⊘</span>Enter f(x) and an initial guess x₀<br/>then hit <strong>Calculate Root</strong></div>
+    </div>
+  </div>
+  <div class="strips">
+    <div class="strip strip-v"><div class="strip-t">Algorithm</div><div class="strip-b">x₀ → x₁ = x₀ − f(x₀)/f′(x₀) → repeat until |xₙ₊₁ − xₙ| &lt; ε</div></div>
+    <div class="strip strip-v"><div class="strip-t">Convergence</div><div class="strip-b">Quadratic — error squares each step. Usually 5–10 iterations to converge.</div></div>
+    <div class="strip strip-v"><div class="strip-t">Condition</div><div class="strip-b">f′(xₙ) ≠ 0 at every step. Initial guess must be near the actual root.</div></div>
+  </div>
+</div>
+
+<!-- ══════ LAGRANGE ══════ -->
+<div class="pane" id="pane-g">
+  <div class="ph">
+    <div class="ph-num" style="color:#059669">02</div>
+    <div>
+      <div class="ph-title">Lagrange Interpolation</div>
+      <div class="ph-desc">Estimate f(x) at any point from known data points. Constructs a unique polynomial through all given data.</div>
+      <div class="ph-formula" style="background:rgba(5,150,105,.14);color:#34d399;">P(x) = Σ yᵢ · Lᵢ(x) &nbsp; Lᵢ(x) = ∏<sub>j≠i</sub>(x−xⱼ)/(xᵢ−xⱼ)</div>
+    </div>
+  </div>
+  <div class="grid2">
+    <div class="icard icard-g fg">
+      <div class="icard-hd">◈ Enter Data Points</div>
+      <div class="icard-bd">
+        <div class="fgrp">
+          <div class="flbl">x values — comma separated</div>
+          <input class="fi mono" id="g-x" value="0, 1, 2" placeholder="e.g. 0, 1, 2, 3"/>
+        </div>
+        <div class="fgrp">
+          <div class="flbl">y = f(x) values — comma separated</div>
+          <input class="fi mono" id="g-y" value="1, 2, 4" placeholder="e.g. 1, 2, 4, 8"/>
+        </div>
+        <div class="fgrp" style="max-width:180px">
+          <div class="flbl">Interpolate at x =</div>
+          <input class="fi" id="g-xv" type="number" value="1.5" step="any"/>
+        </div>
+        <div class="prw">
+          <span class="prlbl">Presets:</span>
+          <button class="prbtn" onclick="gp('0,1,2','1,2,4',1.5)">Exp. 2ˣ</button>
+          <button class="prbtn" onclick="gp('1,2,3,4','1,8,27,64',2.5)">Cubes x³</button>
+          <button class="prbtn" onclick="gp('0,1,2,3','0,1,4,9',1.5)">Squares x²</button>
+          <button class="prbtn" onclick="gp('0,0.25,0.5,0.75,1','1,0.9689,0.8776,0.7317,0.5403',0.6)">cos(x)</button>
+        </div>
+        <button class="cbtn cbtn-g" onclick="runG()">Interpolate <span class="arr">→</span></button>
+      </div>
+    </div>
+    <div>
+      <div class="rcard rcard-g" id="rc-g">
+        <div class="rhero rhero-g">
+          <div class="rtag" style="color:#34d399">Interpolated Value</div>
+          <div class="rval rval-g" id="rg-val">—</div>
+          <div class="rmeta" id="rg-meta"></div>
+        </div>
+        <div class="view-tabs">
+          <button class="vtab on-g" id="vt-g-tbl" onclick="vswitch('g','tbl')">📋 Table</button>
+          <button class="vtab" id="vt-g-curve" onclick="vswitch('g','curve')">📈 Polynomial Curve</button>
+          <button class="vtab" id="vt-g-basis" onclick="vswitch('g','basis')">🧮 Basis Lᵢ(x)</button>
+        </div>
+        <div class="view-body on" id="vb-g-tbl">
+          <div class="rbody"><div class="tscroll">
+            <table class="rtbl">
+              <thead><tr><th>i</th><th>xᵢ</th><th>yᵢ</th><th>Lᵢ(x)</th><th>yᵢ · Lᵢ(x)</th></tr></thead>
+              <tbody id="rg-tb"></tbody>
+            </table>
+          </div></div>
+        </div>
+        <div class="view-body" id="vb-g-curve">
+          <div class="chart-area">
+            <div class="chart-title chart-title-g">Interpolated Polynomial + Data Points</div>
+            <div class="chart-wrap" style="height:240px"><canvas id="chart-g-curve"></canvas></div>
+          </div>
+        </div>
+        <div class="view-body" id="vb-g-basis">
+          <div class="chart-area">
+            <div class="chart-title chart-title-g">Contribution of each yᵢ · Lᵢ(x)</div>
+            <div class="chart-wrap" style="height:240px"><canvas id="chart-g-basis"></canvas></div>
+          </div>
+        </div>
+      </div>
+      <div class="empty" id="eg-empty"><span class="empty-ico">◈</span>Enter x and y data points<br/>then hit <strong>Interpolate</strong></div>
+    </div>
+  </div>
+  <div class="strips">
+    <div class="strip strip-g"><div class="strip-t">Basis Polynomial</div><div class="strip-b">Lᵢ(x) = 1 at xᵢ and 0 at all other xⱼ — unique interpolation guaranteed.</div></div>
+    <div class="strip strip-g"><div class="strip-t">Uniqueness</div><div class="strip-b">For n+1 distinct points, exactly one polynomial of degree ≤ n passes through all of them.</div></div>
+    <div class="strip strip-g"><div class="strip-t">Caution</div><div class="strip-b">Runge's phenomenon: many equally-spaced points can cause oscillation near edges.</div></div>
+  </div>
+</div>
+
+<!-- ══════ EULER ══════ -->
+<div class="pane" id="pane-o">
+  <div class="ph">
+    <div class="ph-num" style="color:#ea580c">03</div>
+    <div>
+      <div class="ph-title">Euler's Method</div>
+      <div class="ph-desc">Numerically solve dy/dx = f(x,y) with initial condition y(x₀)=y₀ by marching forward in fixed steps of h.</div>
+      <div class="ph-formula" style="background:rgba(234,88,12,.14);color:#fb923c;">y<sub>n+1</sub> = y<sub>n</sub> + h · f(x<sub>n</sub>, y<sub>n</sub>)</div>
+    </div>
+  </div>
+  <div class="grid2">
+    <div class="icard icard-o fo">
+      <div class="icard-hd">⊛ Initial Value Problem</div>
+      <div class="icard-bd">
+
+        <div class="syn-box syn-o">
+          <div class="syn-title">Supported Syntax — use x and y</div>
+          <div class="syn-row">
+            <div class="syn-item"><span class="syn-from">x^2</span><span class="syn-arr">→</span><span class="syn-to">x²</span></div>
+            <div class="syn-item"><span class="syn-from">2x</span><span class="syn-arr">→</span><span class="syn-to">2·x</span></div>
+            <div class="syn-item"><span class="syn-from">sin(x)</span><span class="syn-arr">→</span><span class="syn-to">sin</span></div>
+            <div class="syn-item"><span class="syn-from">e^x</span><span class="syn-arr">→</span><span class="syn-to">eˣ</span></div>
+            <div class="syn-item"><span class="syn-from">sqrt(y)</span><span class="syn-arr">→</span><span class="syn-to">√y</span></div>
+            <div class="syn-item"><span class="syn-from">x*y</span><span class="syn-arr">→</span><span class="syn-to">x·y</span></div>
+          </div>
+        </div>
+
+        <div class="fgrp">
+          <div class="flbl">dy/dx = f(x, y)</div>
+          <input class="fi mono" id="o-f" value="x + y" placeholder="e.g. x + y"/>
+        </div>
+        <div class="fg2">
+          <div><div class="flbl">x₀ start</div><input class="fi" id="o-x0" type="number" value="0" step="any"/></div>
+          <div><div class="flbl">y₀ = y(x₀)</div><input class="fi" id="o-y0" type="number" value="1" step="any"/></div>
+          <div><div class="flbl">x end target</div><input class="fi" id="o-xe" type="number" value="0.5" step="any"/></div>
+          <div><div class="flbl">Step size h</div><input class="fi" id="o-h" type="number" value="0.1" step="any"/></div>
+        </div>
+        <div class="prw">
+          <span class="prlbl">Presets:</span>
+          <button class="prbtn" onclick="op('x + y',0,1,.5,.1)">x+y</button>
+          <button class="prbtn" onclick="op('y',0,1,1,.1)">eˣ</button>
+          <button class="prbtn" onclick="op('-2x*y',0,1,1,.1)">−2xy</button>
+          <button class="prbtn" onclick="op('x^2 - y',0,0,1,.1)">x²−y</button>
+          <button class="prbtn" onclick="op('sin(x) + y',0,1,.5,.1)">sin(x)+y</button>
+        </div>
+        <button class="cbtn cbtn-o" onclick="runO()">Solve ODE <span class="arr">→</span></button>
+      </div>
+    </div>
+    <div>
+      <div class="rcard rcard-o" id="rc-o">
+        <div class="rhero rhero-o">
+          <div class="rtag" style="color:#fb923c">ODE Solution</div>
+          <div class="rval rval-o" id="ro-val">—</div>
+          <div class="rmeta" id="ro-meta"></div>
+        </div>
+        <div class="view-tabs">
+          <button class="vtab on-o" id="vt-o-tbl" onclick="vswitch('o','tbl')">📋 Table</button>
+          <button class="vtab" id="vt-o-sol" onclick="vswitch('o','sol')">📈 y(x) Solution</button>
+          <button class="vtab" id="vt-o-slope" onclick="vswitch('o','slope')">📊 Slope Field</button>
+        </div>
+        <div class="view-body on" id="vb-o-tbl">
+          <div class="rbody"><div class="tscroll">
+            <table class="rtbl">
+              <thead><tr><th>n</th><th>xₙ</th><th>yₙ</th><th>f(xₙ,yₙ)</th><th>h·f</th><th>yₙ₊₁</th></tr></thead>
+              <tbody id="ro-tb"></tbody>
+            </table>
+          </div></div>
+        </div>
+        <div class="view-body" id="vb-o-sol">
+          <div class="chart-area">
+            <div class="chart-title chart-title-o">Numerical Solution y(x) — Step by Step</div>
+            <div class="chart-wrap" style="height:240px"><canvas id="chart-o-sol"></canvas></div>
+          </div>
+        </div>
+        <div class="view-body" id="vb-o-slope">
+          <div class="chart-area">
+            <div class="chart-grid">
+              <div>
+                <div class="chart-title chart-title-o">Slope f(xₙ,yₙ) per Step</div>
+                <div class="chart-wrap"><canvas id="chart-o-slope"></canvas></div>
+              </div>
+              <div>
+                <div class="chart-title chart-title-o">Step Increment h·f per Step</div>
+                <div class="chart-wrap"><canvas id="chart-o-dy"></canvas></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="empty" id="eo-empty"><span class="empty-ico">⊛</span>Set dy/dx and initial values<br/>then hit <strong>Solve ODE</strong></div>
+    </div>
+  </div>
+  <div class="strips">
+    <div class="strip strip-o"><div class="strip-t">Algorithm</div><div class="strip-b">Start at (x₀,y₀) → slope k=f(xₙ,yₙ) → step: yₙ₊₁=yₙ+hk, xₙ₊₁=xₙ+h</div></div>
+    <div class="strip strip-o"><div class="strip-t">Error</div><div class="strip-b">First-order method. Global error O(h). Halving h roughly halves the error.</div></div>
+    <div class="strip strip-o"><div class="strip-t">Stability</div><div class="strip-b">Conditionally stable. For stiff problems use smaller h or implicit Runge-Kutta methods.</div></div>
+  </div>
+</div>
+
+</div><!-- /content -->
+</div><!-- /app -->
+<div class="toast" id="toast"></div>
+
+<script>
+/* ═══════════════════════════════
+   ANIMATED BACKGROUND CANVAS
+═══════════════════════════════ */
+(function(){
+  var c=document.getElementById('bg'),ctx=c.getContext('2d');
+  var W,H,orbs=[];
+  var COLS=['rgba(124,58,237,','rgba(5,150,105,','rgba(234,88,12,','rgba(99,102,241,','rgba(16,185,129,','rgba(245,158,11,'];
+  function resize(){W=c.width=window.innerWidth;H=c.height=window.innerHeight;}
+  function init(){
+    orbs=[];
+    for(var i=0;i<8;i++) orbs.push({x:Math.random()*W,y:Math.random()*H,vx:(Math.random()-.5)*.28,vy:(Math.random()-.5)*.28,r:160+Math.random()*240,col:COLS[i%COLS.length],a:.05+Math.random()*.065,ph:Math.random()*Math.PI*2});
+  }
+  function draw(t){
+    ctx.clearRect(0,0,W,H);ctx.fillStyle='#0d0d1a';ctx.fillRect(0,0,W,H);
+    for(var i=0;i<orbs.length;i++){
+      var o=orbs[i];o.x+=o.vx;o.y+=o.vy;
+      if(o.x<-o.r)o.x=W+o.r;if(o.x>W+o.r)o.x=-o.r;
+      if(o.y<-o.r)o.y=H+o.r;if(o.y>H+o.r)o.y=-o.r;
+      var a=o.a+Math.sin(t*.00055+o.ph)*.022;
+      var g=ctx.createRadialGradient(o.x,o.y,0,o.x,o.y,o.r);
+      g.addColorStop(0,o.col+a+')');g.addColorStop(1,o.col+'0)');
+      ctx.fillStyle=g;ctx.beginPath();ctx.arc(o.x,o.y,o.r,0,Math.PI*2);ctx.fill();
+    }
+    requestAnimationFrame(draw);
+  }
+  window.addEventListener('resize',function(){resize();});
+  resize();init();requestAnimationFrame(draw);
+})();
+
+/* ═══════════════════════════════
+   PANEL SWITCHER
+═══════════════════════════════ */
+function sw(m){
+  var map={v:0,g:1,o:2};
+  var panes=['pane-v','pane-g','pane-o'];
+  var nbs=['nb-v','nb-g','nb-o'];
+  var ncs=['av','ag','ao'];
+  var mss=['ms-v','ms-g','ms-o'];
+  var i=map[m];
+  panes.forEach(function(id,j){document.getElementById(id).className='pane'+(j===i?' on':'');});
+  nbs.forEach(function(id,j){document.getElementById(id).className='npill'+(j===i?' '+ncs[j]:'');});
+  mss.forEach(function(id,j){document.getElementById(id).classList.toggle('on',j===i);});
+}
+
+/* ═══════════════════════════════
+   MATH EXPRESSION PARSER
+   Converts natural math notation to JS:
+   x^2      → Math.pow(x,2)
+   2x       → 2*x
+   sin(x)   → Math.sin(x)
+   cos(x)   → Math.cos(x)
+   tan(x)   → Math.tan(x)
+   e^x      → Math.exp(x)
+   ln(x)    → Math.log(x)
+   log(x)   → Math.log10(x)
+   sqrt(x)  → Math.sqrt(x)
+   abs(x)   → Math.abs(x)
+   |x|      → Math.abs(x)
+   pi / PI  → Math.PI
+   e (lone) → Math.E
+═══════════════════════════════ */
+function parseMath(expr) {
+  var s = expr.trim();
+
+  // STEP 1 — absolute value bars  |x| → abs(x)  (before anything else)
+  s = s.replace(/\|([^|]+)\|/g, 'abs($1)');
+
+  // STEP 2 — e^(expr) and e^term  →  exp(...)
+  s = s.replace(/\be\s*\^\s*\(([^)]+)\)/g, 'exp($1)');
+  s = s.replace(/\be\s*\^\s*([A-Za-z0-9_.]+)/g, 'exp($1)');
+
+  // STEP 3 — x^n  →  pow(x,n)   (multiple passes for chained powers)
+  for (var p = 0; p < 6; p++) {
+    s = s.replace(/\(([^()]+)\)\s*\^\s*\(([^()]+)\)/g, 'pow(($1),($2))');
+    s = s.replace(/\(([^()]+)\)\s*\^\s*([A-Za-z0-9_.]+)/g,  'pow(($1),$2)');
+    s = s.replace(/([A-Za-z0-9_.]+)\s*\^\s*\(([^()]+)\)/g,  'pow($1,($2))');
+    s = s.replace(/([A-Za-z0-9_.]+)\s*\^\s*([A-Za-z0-9_.]+)/g, 'pow($1,$2)');
+  }
+
+  // STEP 4 — implicit multiplication  (do BEFORE Math.* substitution!)
+  //   2x → 2*x    2( → 2*(    )( → )*(
+  //   Only insert * between digit and letter/open-paren
+  s = s.replace(/(\d)\s*([A-Za-z(])/g, '$1*$2');
+  //   digit immediately followed by ( already handled above
+  //   close-paren then open-paren
+  s = s.replace(/\)\s*\(/g, ')*(');
+  //   close-paren then digit or letter (e.g. (x+1)x → (x+1)*x)
+  s = s.replace(/\)\s*([A-Za-z0-9])/g, ')*$1');
+
+  // STEP 5 — named constants
+  s = s.replace(/\bpi\b/gi,  'Math.PI');
+  // lone e not part of a word and not already inside exp(...)
+  s = s.replace(/(?<![A-Za-z_])e(?![A-Za-z_(])/g, 'Math.E');
+
+  // STEP 6 — named functions  → Math.*
+  //   Order matters: longer names first to avoid partial matches
+  var fns = [
+    ['asin','asin'],['acos','acos'],['atan','atan'],
+    ['sinh','sinh'],['cosh','cosh'],['tanh','tanh'],
+    ['sqrt','sqrt'],['cbrt','cbrt'],
+    ['floor','floor'],['ceil','ceil'],['round','round'],
+    ['abs','abs'],['sign','sign'],
+    ['log10','log10'],['log2','log2'],
+    ['ln','log'],          // ln(x) → Math.log(x)
+    ['log','log10'],       // log(x) → Math.log10(x)
+    ['exp','exp'],
+    ['sin','sin'],['cos','cos'],['tan','tan'],
+    ['pow','pow'],
+    ['max','max'],['min','min']
+  ];
+  fns.forEach(function(pair){
+    var re = new RegExp('\\b' + pair[0] + '\\s*\\(', 'g');
+    s = s.replace(re, 'Math.' + pair[1] + '(');
+  });
+
+  // STEP 7 — safety: fix any accidental Math.xxx*( created by earlier passes
+  s = s.replace(/(Math\.[a-zA-Z0-9]+)\s*\*\s*\(/g, '$1(');
+
+  return s;
+}
+
+/* ═══════════════════════════════
+   BUILD FUNCTION FROM EXPRESSION
+═══════════════════════════════ */
+function mkfn(rawExpr) {
+  var js = parseMath(rawExpr);
+  try {
+    var fn = new Function('x','y','with(Math){return('+js+')}');
+    fn(1,1); // smoke test
+    return fn;
+  } catch(e) {
+    throw new Error('Cannot parse "'+rawExpr+'" → '+e.message);
+  }
+}
+
+/* ═══════════════════════════════
+   UTILS
+═══════════════════════════════ */
+function fmt(v,d){d=d===undefined?8:d;if(!isFinite(v))return'∞';return parseFloat(v.toFixed(d)).toString();}
+function toast(msg,type){var t=document.getElementById('toast');t.textContent=msg;t.className='toast show '+(type||'');clearTimeout(t._t);t._t=setTimeout(function(){t.className='toast';},3800);}
+function showR(rcId,emId){
+  var r=document.getElementById(rcId);
+  r.className=r.className.replace(/\s*show/,'')+' show';
+  document.getElementById(emId).style.display='none';
+}
+
+/* ═══════════════════════════════
+   PRESETS
+═══════════════════════════════ */
+function vp(f,df,x0){document.getElementById('v-fx').value=f;document.getElementById('v-df').value=df;document.getElementById('v-x0').value=x0;}
+function gp(x,y,xv){document.getElementById('g-x').value=x;document.getElementById('g-y').value=y;document.getElementById('g-xv').value=xv;}
+function op(f,x0,y0,xe,h){document.getElementById('o-f').value=f;document.getElementById('o-x0').value=x0;document.getElementById('o-y0').value=y0;document.getElementById('o-xe').value=xe;document.getElementById('o-h').value=h;}
+
+/* ═══════════════════════════════
+   NEWTON–RAPHSON
+═══════════════════════════════ */
+function runV(){
+  try{
+    var fS=document.getElementById('v-fx').value.trim();
+    var dS=document.getElementById('v-df').value.trim();
+    var x=parseFloat(document.getElementById('v-x0').value);
+    var tol=parseFloat(document.getElementById('v-tol').value)||0.0001;
+    var mi=parseInt(document.getElementById('v-mi').value)||50;
+    if(!fS) throw new Error('Please enter f(x)');
+    if(isNaN(x)) throw new Error('Enter a valid x₀');
+    var f=mkfn(fS);
+    var useNum=!dS;
+    var df=useNum ? function(xv){ var h=1e-7; return (f(xv+h,0)-f(xv-h,0))/(2*h); } : mkfn(dS);
+    var rows=[],conv=false;
+    for(var i=0;i<mi;i++){
+      var fx=f(x,0), dfx=useNum?df(x):df(x,0);
+      if(Math.abs(dfx)<1e-14) throw new Error('f′(x) = 0 at x = '+fmt(x,4)+'. Method fails here.');
+      var xn=x-fx/dfx, err=Math.abs(xn-x);
+      rows.push([i,x,fx,dfx,xn,err]);
+      x=xn;
+      if(!isFinite(x)) throw new Error('Diverged — try a different x₀');
+      if(err<tol){conv=true;break;}
+    }
+    document.getElementById('rv-val').textContent='x ≈ '+fmt(x);
+    document.getElementById('rv-meta').textContent='f(root) = '+fmt(f(x,0))+'  ·  '+rows.length+' iteration'+(rows.length!==1?'s':'')+'  ·  '+(conv?'✓ Converged':'⚠ Max reached');
+    document.getElementById('rv-note').textContent=useNum?'f′(x) auto-estimated via central difference':'';
+    document.getElementById('rv-tb').innerHTML=rows.map(function(r,i){
+      return '<tr class="'+(i===rows.length-1?'fin':'')+'"><td>'+r[0]+'</td><td>'+fmt(r[1])+'</td><td>'+fmt(r[2])+'</td><td>'+fmt(r[3])+'</td><td>'+fmt(r[4])+'</td><td>'+fmt(r[5])+'</td></tr>';
+    }).join('');
+    showR('rc-v','ev-empty');
+    vswitch('v','tbl');
+    drawNRCharts(f, rows, x);
+    toast('Root ≈ '+fmt(x,6),'ok');
+  } catch(e){ toast(e.message,'err'); }
+}
+
+/* ═══════════════════════════════
+   LAGRANGE
+═══════════════════════════════ */
+function runG(){
+  try{
+    var xs=document.getElementById('g-x').value.split(',').map(function(s){return parseFloat(s.trim());});
+    var ys=document.getElementById('g-y').value.split(',').map(function(s){return parseFloat(s.trim());});
+    var xv=parseFloat(document.getElementById('g-xv').value);
+    if(xs.some(isNaN)||ys.some(isNaN)) throw new Error('Invalid data — check x and y values');
+    if(xs.length!==ys.length) throw new Error('x and y must have the same count');
+    if(xs.length<2) throw new Error('Need at least 2 data points');
+    if(isNaN(xv)) throw new Error('Enter a valid interpolation x');
+    var n=xs.length,total=0,rows=[];
+    for(var i=0;i<n;i++){
+      var num=1,den=1;
+      for(var j=0;j<n;j++){
+        if(j!==i){
+          if(xs[i]===xs[j]) throw new Error('Duplicate x value at index '+i+' and '+j);
+          num*=(xv-xs[j]); den*=(xs[i]-xs[j]);
+        }
+      }
+      var Li=num/den, ci=ys[i]*Li;
+      total+=ci;
+      rows.push([i,xs[i],ys[i],Li,ci]);
+    }
+    document.getElementById('rg-val').textContent='P('+xv+') ≈ '+fmt(total);
+    document.getElementById('rg-meta').textContent=n+' data points  ·  Degree '+(n-1)+' polynomial';
+    document.getElementById('rg-tb').innerHTML=rows.map(function(r){
+      return '<tr><td>'+r[0]+'</td><td>'+fmt(r[1])+'</td><td>'+fmt(r[2])+'</td><td>'+fmt(r[3])+'</td><td>'+fmt(r[4])+'</td></tr>';
+    }).join('')+'<tr class="tot"><td colspan="4" style="text-align:right;padding-right:1.2rem">P('+xv+') = Σ</td><td>'+fmt(total)+'</td></tr>';
+    showR('rc-g','eg-empty');
+    vswitch('g','tbl');
+    drawLGCharts(xs, ys, xv, rows, total);
+    toast('P('+xv+') ≈ '+fmt(total,6),'ok');
+  } catch(e){ toast(e.message,'err'); }
+}
+
+/* ═══════════════════════════════
+   EULER'S METHOD
+═══════════════════════════════ */
+function runO(){
+  try{
+    var fS=document.getElementById('o-f').value.trim();
+    var x=parseFloat(document.getElementById('o-x0').value);
+    var y=parseFloat(document.getElementById('o-y0').value);
+    var xe=parseFloat(document.getElementById('o-xe').value);
+    var h=parseFloat(document.getElementById('o-h').value);
+    if(!fS) throw new Error('Enter dy/dx = f(x,y)');
+    if(isNaN(x)||isNaN(y)||isNaN(xe)||isNaN(h)) throw new Error('All fields must be valid numbers');
+    if(h<=0) throw new Error('Step size h must be positive');
+    if(xe<=x) throw new Error('x_end must be greater than x₀');
+    var f=mkfn(fS);
+    var rows=[],cnt=0;
+    while(x<xe-1e-10){
+      if(cnt>=600) throw new Error('Too many steps (>600) — increase h');
+      var hs=Math.min(h,xe-x), fv=f(x,y), dy=hs*fv, yn=y+dy;
+      rows.push([cnt,x,y,fv,dy,yn]);
+      x=parseFloat((x+hs).toFixed(10)); y=yn; cnt++;
+    }
+    document.getElementById('ro-val').textContent='y('+xe+') ≈ '+fmt(y);
+    document.getElementById('ro-meta').textContent=rows.length+' step'+(rows.length!==1?'s':'')+'  ·  h = '+h;
+    var disp=rows.length>90?rows.slice(0,89):rows;
+    var html=disp.map(function(r,i){
+      return '<tr class="'+(i===disp.length-1&&rows.length<=90?'fin':'')+'"><td>'+r[0]+'</td><td>'+fmt(r[1])+'</td><td>'+fmt(r[2])+'</td><td>'+fmt(r[3])+'</td><td>'+fmt(r[4])+'</td><td>'+fmt(r[5])+'</td></tr>';
+    }).join('');
+    if(rows.length>90){
+      var last=rows[rows.length-1];
+      html+='<tr><td class="ttrunc" colspan="6">⋯ '+(rows.length-89)+' rows hidden ⋯</td></tr>';
+      html+='<tr class="fin"><td>'+last[0]+'</td><td>'+fmt(last[1])+'</td><td>'+fmt(last[2])+'</td><td>'+fmt(last[3])+'</td><td>'+fmt(last[4])+'</td><td>'+fmt(last[5])+'</td></tr>';
+    }
+    document.getElementById('ro-tb').innerHTML=html;
+    showR('rc-o','eo-empty');
+    vswitch('o','tbl');
+    drawEUCharts(rows);
+    toast('y('+xe+') ≈ '+fmt(y,6),'ok');
+  } catch(e){ toast(e.message,'err'); }
+}
+
+/* ═══════════════════════════════════════════════
+   VIEW TAB SWITCHER
+═══════════════════════════════════════════════ */
+function vswitch(method, tab) {
+  var configs = {
+    v: { tabs:['tbl','fn','err'],   cls:'on-v' },
+    g: { tabs:['tbl','curve','basis'], cls:'on-g' },
+    o: { tabs:['tbl','sol','slope'], cls:'on-o' }
+  };
+  var cfg = configs[method];
+  cfg.tabs.forEach(function(t){
+    var btn = document.getElementById('vt-'+method+'-'+t);
+    var body = document.getElementById('vb-'+method+'-'+t);
+    if(btn)  btn.className  = 'vtab' + (t===tab ? ' '+cfg.cls : '');
+    if(body) body.className = 'view-body' + (t===tab ? ' on' : '');
+  });
+}
+
+/* ═══════════════════════════════════════════════
+   CHART HELPERS
+═══════════════════════════════════════════════ */
+var _charts = {};
+function mkChart(id, cfg) {
+  if(_charts[id]) { _charts[id].destroy(); }
+  var ctx = document.getElementById(id);
+  if(!ctx) return;
+  _charts[id] = new Chart(ctx, cfg);
+}
+
+var GRID = { color:'rgba(255,255,255,.06)', lineWidth:0.5 };
+var TICK = { color:'rgba(240,240,255,.35)', font:{ family:"'JetBrains Mono'", size:10 } };
+
+function baseOpts(title, xLabel, yLabel) {
+  return {
+    responsive:true, maintainAspectRatio:false,
+    animation:{ duration:600, easing:'easeOutQuart' },
+    plugins:{
+      legend:{ display:true, labels:{ color:'rgba(240,240,255,.55)', font:{family:"'JetBrains Mono'",size:10}, boxWidth:12, padding:14 } },
+      tooltip:{ backgroundColor:'rgba(13,13,26,.92)', borderColor:'rgba(255,255,255,.12)', borderWidth:1, titleColor:'#f0f0ff', bodyColor:'rgba(240,240,255,.7)', titleFont:{family:"'JetBrains Mono'",size:11}, bodyFont:{family:"'JetBrains Mono'",size:10}, padding:10 }
+    },
+    scales:{
+      x:{ grid:GRID, ticks:Object.assign({},TICK,{maxTicksLimit:8}), title:{display:!!xLabel,text:xLabel||'',color:'rgba(240,240,255,.4)',font:{family:"'JetBrains Mono'",size:10}} },
+      y:{ grid:GRID, ticks:Object.assign({},TICK,{maxTicksLimit:6}), title:{display:!!yLabel,text:yLabel||'',color:'rgba(240,240,255,.4)',font:{family:"'JetBrains Mono'",size:10}} }
+    }
+  };
+}
+
+/* ── NEWTON CHARTS ── */
+function drawNRCharts(f, rows, root) {
+  /* --- f(x) curve chart --- */
+  var xmin = root - 3, xmax = root + 3;
+  // also include all iteration x values
+  rows.forEach(function(r){ xmin=Math.min(xmin,r[1]-0.5); xmax=Math.max(xmax,r[1]+0.5); });
+  var curveX=[], curveY=[];
+  var steps = 120;
+  for(var i=0;i<=steps;i++){
+    var xi = xmin + (xmax-xmin)*i/steps;
+    var yi = f(xi,0);
+    if(Math.abs(yi)<1e6){ curveX.push(parseFloat(xi.toFixed(4))); curveY.push(parseFloat(yi.toFixed(6))); }
+  }
+  // iteration scatter points
+  var iterX = rows.map(function(r){return parseFloat(r[1].toFixed(6));});
+  var iterY = rows.map(function(r){return parseFloat(r[2].toFixed(6));});
+
+  var opts1 = baseOpts('f(x) Curve','x','f(x)');
+  opts1.plugins.annotation = {};
+  mkChart('chart-v-fn',{
+    type:'line',
+    data:{
+      labels: curveX,
+      datasets:[
+        { label:'f(x)', data:curveY, borderColor:'#a78bfa', borderWidth:2.5, pointRadius:0, fill:false, tension:0.3 },
+        { label:'Iterations xₙ', data:iterY, borderColor:'#34d399', backgroundColor:'#34d399', pointRadius:6, pointStyle:'circle', showLine:false, type:'scatter',
+          xLabels: iterX,
+          parsing:{ xAxisKey:'x', yAxisKey:'y' }
+        },
+        { label:'Root', data:[{x:parseFloat(root.toFixed(6)),y:0}], borderColor:'#fb923c', backgroundColor:'#fb923c', pointRadius:10, pointStyle:'crossRot', showLine:false, type:'scatter', parsing:{xAxisKey:'x',yAxisKey:'y'} }
+      ]
+    },
+    options: opts1
+  });
+
+  /* --- error convergence chart --- */
+  var errLabels = rows.map(function(r){return 'n='+r[0];});
+  var errVals   = rows.map(function(r){return r[5];});
+  var opts2 = baseOpts('','Iteration','|error|');
+  opts2.scales.y.type = 'logarithmic';
+  opts2.scales.y.ticks = Object.assign({},TICK,{maxTicksLimit:5, callback:function(v){return v.toExponential(1);}});
+  mkChart('chart-v-err',{
+    type:'bar',
+    data:{ labels:errLabels, datasets:[{ label:'|xₙ₊₁ − xₙ|', data:errVals, backgroundColor:'rgba(167,139,250,.55)', borderColor:'#a78bfa', borderWidth:1.5, borderRadius:4 }] },
+    options: opts2
+  });
+
+  /* --- f(xₙ) chart --- */
+  var fxVals = rows.map(function(r){return r[2];});
+  var opts3 = baseOpts('','Iteration','f(xₙ)');
+  mkChart('chart-v-fx',{
+    type:'line',
+    data:{ labels:errLabels, datasets:[{ label:'f(xₙ)', data:fxVals, borderColor:'#34d399', backgroundColor:'rgba(52,211,153,.12)', borderWidth:2, pointRadius:5, pointBackgroundColor:'#34d399', fill:true, tension:0.2 }] },
+    options: opts3
+  });
+}
+
+/* ── LAGRANGE CHARTS ── */
+function drawLGCharts(xs, ys, xv, terms, total) {
+  /* --- polynomial curve --- */
+  var xmin = Math.min.apply(null,xs), xmax = Math.max.apply(null,xs);
+  var pad = (xmax-xmin)*0.25 || 0.5;
+  xmin -= pad; xmax += pad;
+  var STEPS = 150;
+  var polyX=[], polyY=[];
+  for(var i=0;i<=STEPS;i++){
+    var xi = xmin+(xmax-xmin)*i/STEPS;
+    var n=xs.length, py=0;
+    for(var j=0;j<n;j++){
+      var num=1,den=1;
+      for(var k=0;k<n;k++){ if(k!==j){num*=(xi-xs[k]);den*=(xs[j]-xs[k]);} }
+      py+=ys[j]*(num/den);
+    }
+    if(isFinite(py)&&Math.abs(py)<1e6){ polyX.push(parseFloat(xi.toFixed(4))); polyY.push(parseFloat(py.toFixed(6))); }
+  }
+  // interpolated point
+  var interpPy=total;
+
+  var opts1 = baseOpts('','x','P(x)');
+  mkChart('chart-g-curve',{
+    type:'line',
+    data:{
+      labels: polyX,
+      datasets:[
+        { label:'P(x) polynomial', data:polyY, borderColor:'#34d399', borderWidth:2.5, pointRadius:0, fill:false, tension:0.3 },
+        { label:'Data points', data:ys, borderColor:'#a78bfa', backgroundColor:'#a78bfa', pointRadius:7, pointStyle:'circle', showLine:false, type:'scatter', parsing:{xAxisKey:'x',yAxisKey:'y'},
+          data: xs.map(function(xi,i){return {x:xi,y:ys[i]};}) },
+        { label:'P('+xv.toFixed(2)+')', data:[{x:xv,y:interpPy}], borderColor:'#fb923c', backgroundColor:'#fb923c', pointRadius:10, pointStyle:'star', showLine:false, type:'scatter', parsing:{xAxisKey:'x',yAxisKey:'y'} }
+      ]
+    },
+    options: opts1
+  });
+
+  /* --- basis contributions bar chart --- */
+  var barLabels = terms.map(function(t){ return 'y'+t[0]+'·L'+t[0]+'(x)'; });
+  var barVals   = terms.map(function(t){ return parseFloat(t[4].toFixed(6)); });
+  var barColors = ['rgba(167,139,250,.7)','rgba(52,211,153,.7)','rgba(251,146,60,.7)','rgba(99,102,241,.7)','rgba(16,185,129,.7)','rgba(245,158,11,.7)'];
+
+  mkChart('chart-g-basis',{
+    type:'bar',
+    data:{ labels:barLabels, datasets:[{ label:'yᵢ · Lᵢ(x)', data:barVals, backgroundColor:barLabels.map(function(_,i){return barColors[i%barColors.length];}), borderRadius:6, borderWidth:0 }] },
+    options: baseOpts('','Term','Value')
+  });
+}
+
+/* ── EULER CHARTS ── */
+function drawEUCharts(rows) {
+  var labels = rows.map(function(r){return parseFloat(r[1].toFixed(4));});
+  var yVals  = rows.map(function(r){return parseFloat(r[2].toFixed(6));});
+  var fVals  = rows.map(function(r){return parseFloat(r[3].toFixed(6));});
+  var dyVals = rows.map(function(r){return parseFloat(r[4].toFixed(6));});
+
+  /* --- solution curve --- */
+  mkChart('chart-o-sol',{
+    type:'line',
+    data:{ labels:labels, datasets:[
+      { label:'y(x) Euler solution', data:yVals, borderColor:'#fb923c', backgroundColor:'rgba(251,146,60,.12)', borderWidth:2.5, pointRadius:3, pointBackgroundColor:'#fb923c', fill:true, tension:0.25 }
+    ]},
+    options: baseOpts('','x','y(x)')
+  });
+
+  /* --- slope chart --- */
+  mkChart('chart-o-slope',{
+    type:'line',
+    data:{ labels:labels, datasets:[
+      { label:'f(xₙ,yₙ)', data:fVals, borderColor:'#a78bfa', backgroundColor:'rgba(167,139,250,.12)', borderWidth:2, pointRadius:3, pointBackgroundColor:'#a78bfa', fill:true, tension:0.2 }
+    ]},
+    options: baseOpts('','x','slope')
+  });
+
+  /* --- h·f increment chart --- */
+  mkChart('chart-o-dy',{
+    type:'bar',
+    data:{ labels:labels, datasets:[
+      { label:'h · f(xₙ,yₙ)', data:dyVals, backgroundColor:dyVals.map(function(v){return v>=0?'rgba(52,211,153,.6)':'rgba(251,146,60,.6)';}), borderRadius:3, borderWidth:0 }
+    ]},
+    options: baseOpts('','x','Δy')
+  });
+}
+</script>
+</body>
+</html>
