@@ -192,6 +192,26 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#0d0d1a;color:#f0f0ff
 .chart-wrap:last-child{margin-bottom:0;}
 .chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;}
 @media(max-width:600px){.chart-grid{grid-template-columns:1fr;}}
+
+/* ── DECIMAL PICKER (per method) ── */
+.dp-row{display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:.55rem 1rem;margin-bottom:1rem;}
+.dp-label{font-family:var(--mono);font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:rgba(240,240,255,.4);}
+.dp-ctrl{display:flex;align-items:center;gap:10px;}
+.dp-btn{width:26px;height:26px;border-radius:7px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.08);color:rgba(240,240,255,.8);font-size:1rem;font-weight:700;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;}
+.dp-btn:hover{background:rgba(255,255,255,.18);color:#f0f0ff;transform:scale(1.08);}
+.dp-val{font-family:var(--mono);font-size:.95rem;font-weight:700;color:#f0f0ff;min-width:22px;text-align:center;}
+.icard-v .dp-row{border-color:rgba(124,58,237,.2);background:rgba(124,58,237,.06);}
+.icard-v .dp-label{color:#a78bfa;}
+.icard-v .dp-btn{border-color:rgba(124,58,237,.3);background:rgba(124,58,237,.12);color:#a78bfa;}
+.icard-v .dp-btn:hover{background:rgba(124,58,237,.28);color:#c4b5fd;}
+.icard-g .dp-row{border-color:rgba(5,150,105,.2);background:rgba(5,150,105,.06);}
+.icard-g .dp-label{color:#34d399;}
+.icard-g .dp-btn{border-color:rgba(5,150,105,.3);background:rgba(5,150,105,.12);color:#34d399;}
+.icard-g .dp-btn:hover{background:rgba(5,150,105,.28);color:#6ee7b7;}
+.icard-o .dp-row{border-color:rgba(234,88,12,.2);background:rgba(234,88,12,.06);}
+.icard-o .dp-label{color:#fb923c;}
+.icard-o .dp-btn{border-color:rgba(234,88,12,.3);background:rgba(234,88,12,.12);color:#fb923c;}
+.icard-o .dp-btn:hover{background:rgba(234,88,12,.28);color:#fdba74;}
 </style>
 </head>
 <body>
@@ -216,7 +236,7 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#0d0d1a;color:#f0f0ff
 <div class="hero">
   <div class="hero-eye">Statistics &amp; Numerical Methods — Unit III</div>
   <h1 class="hero-title"><span>Numerical Methods Calculator</span></h1>
-  <p class="hero-sub">Type expressions naturally — <strong>x^2</strong>, <strong>sin(x)</strong>, <strong>e^x</strong>, <strong>sqrt(x)</strong> — step‑by‑step results with 8‑decimal precision.</p>
+  <p class="hero-sub">Type naturally — <strong>x^2</strong>, <strong>sin(x)</strong>, <strong>e^x</strong>, <strong>sqrt(x)</strong> — control decimal precision from the navbar.</p>
   <div class="methods">
     <div class="msel msel-v on" id="ms-v" onclick="sw('v')">
       <span class="msel-ico">⊘</span>
@@ -277,10 +297,9 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#0d0d1a;color:#f0f0ff
           <div class="flbl">f′(x) <span class="fopt">optional — auto if blank</span></div>
           <input class="fi mono" id="v-df" value="3x^2 - 2" placeholder="e.g. 3x^2 - 2"/>
         </div>
-        <div class="fg3">
-          <div><div class="flbl">x₀ initial</div><input class="fi" id="v-x0" type="number" value="2" step="any"/></div>
-          <div><div class="flbl">Tolerance ε</div><input class="fi" id="v-tol" type="number" value="0.0001" step="any"/></div>
-          <div><div class="flbl">Max iter</div><input class="fi" id="v-mi" type="number" value="50"/></div>
+        <div class="fg2">
+          <div><div class="flbl">x₀ initial guess</div><input class="fi" id="v-x0" type="number" value="2" step="any"/></div>
+          <div><div class="flbl">Max iterations</div><input class="fi" id="v-mi" type="number" value="50"/></div>
         </div>
         <div class="prw">
           <span class="prlbl">Presets:</span>
@@ -290,6 +309,14 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#0d0d1a;color:#f0f0ff
           <button class="prbtn" onclick="vp('e^x - 3x','e^x - 3',1)">eˣ−3x</button>
           <button class="prbtn" onclick="vp('x^3 - x - 2','3x^2 - 1',1.5)">x³−x−2</button>
           <button class="prbtn" onclick="vp('sin(x) - x/2','cos(x) - 0.5',1.5)">sin(x)−x/2</button>
+        </div>
+        <div class="dp-row">
+          <span class="dp-label">Decimal Places</span>
+          <div class="dp-ctrl">
+            <button class="dp-btn" onclick="chgDp('v',-1)">−</button>
+            <span class="dp-val" id="dp-v">4</span>
+            <button class="dp-btn" onclick="chgDp('v',+1)">+</button>
+          </div>
         </div>
         <button class="cbtn cbtn-v" onclick="runV()">Calculate Root <span class="arr">→</span></button>
       </div>
@@ -378,6 +405,14 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#0d0d1a;color:#f0f0ff
           <button class="prbtn" onclick="gp('1,2,3,4','1,8,27,64',2.5)">Cubes x³</button>
           <button class="prbtn" onclick="gp('0,1,2,3','0,1,4,9',1.5)">Squares x²</button>
           <button class="prbtn" onclick="gp('0,0.25,0.5,0.75,1','1,0.9689,0.8776,0.7317,0.5403',0.6)">cos(x)</button>
+        </div>
+        <div class="dp-row">
+          <span class="dp-label">Decimal Places</span>
+          <div class="dp-ctrl">
+            <button class="dp-btn" onclick="chgDp('g',-1)">−</button>
+            <span class="dp-val" id="dp-g">4</span>
+            <button class="dp-btn" onclick="chgDp('g',+1)">+</button>
+          </div>
         </div>
         <button class="cbtn cbtn-g" onclick="runG()">Interpolate <span class="arr">→</span></button>
       </div>
@@ -469,6 +504,14 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#0d0d1a;color:#f0f0ff
           <button class="prbtn" onclick="op('-2x*y',0,1,1,.1)">−2xy</button>
           <button class="prbtn" onclick="op('x^2 - y',0,0,1,.1)">x²−y</button>
           <button class="prbtn" onclick="op('sin(x) + y',0,1,.5,.1)">sin(x)+y</button>
+        </div>
+        <div class="dp-row">
+          <span class="dp-label">Decimal Places</span>
+          <div class="dp-ctrl">
+            <button class="dp-btn" onclick="chgDp('o',-1)">−</button>
+            <span class="dp-val" id="dp-o">4</span>
+            <button class="dp-btn" onclick="chgDp('o',+1)">+</button>
+          </div>
         </div>
         <button class="cbtn cbtn-o" onclick="runO()">Solve ODE <span class="arr">→</span></button>
       </div>
@@ -667,7 +710,22 @@ function mkfn(rawExpr) {
 /* ═══════════════════════════════
    UTILS
 ═══════════════════════════════ */
-function fmt(v,d){d=d===undefined?8:d;if(!isFinite(v))return'∞';return parseFloat(v.toFixed(d)).toString();}
+/* ═══════════════════════════════
+   PER-METHOD DECIMAL PRECISION
+═══════════════════════════════ */
+var _dp = { v:4, g:4, o:4 };
+
+function chgDp(method, delta){
+  _dp[method] = Math.min(10, Math.max(0, _dp[method] + delta));
+  document.getElementById('dp-'+method).textContent = _dp[method];
+}
+
+/* fmt(value, method) — uses that method's decimal setting */
+function fmt(v, m){
+  if(!isFinite(v)) return '∞';
+  var d = (m && _dp[m] !== undefined) ? _dp[m] : 4;
+  return parseFloat(v.toFixed(d)).toString();
+}
 function toast(msg,type){var t=document.getElementById('toast');t.textContent=msg;t.className='toast show '+(type||'');clearTimeout(t._t);t._t=setTimeout(function(){t.className='toast';},3800);}
 function showR(rcId,emId){
   var r=document.getElementById(rcId);
@@ -690,7 +748,7 @@ function runV(){
     var fS=document.getElementById('v-fx').value.trim();
     var dS=document.getElementById('v-df').value.trim();
     var x=parseFloat(document.getElementById('v-x0').value);
-    var tol=parseFloat(document.getElementById('v-tol').value)||0.0001;
+    var tol=1e-10;
     var mi=parseInt(document.getElementById('v-mi').value)||50;
     if(!fS) throw new Error('Please enter f(x)');
     if(isNaN(x)) throw new Error('Enter a valid x₀');
@@ -700,23 +758,23 @@ function runV(){
     var rows=[],conv=false;
     for(var i=0;i<mi;i++){
       var fx=f(x,0), dfx=useNum?df(x):df(x,0);
-      if(Math.abs(dfx)<1e-14) throw new Error('f′(x) = 0 at x = '+fmt(x,4)+'. Method fails here.');
+      if(Math.abs(dfx)<1e-14) throw new Error('f′(x) = 0 at x = '+fmt(x,'v')+'. Method fails here.');
       var xn=x-fx/dfx, err=Math.abs(xn-x);
       rows.push([i,x,fx,dfx,xn,err]);
       x=xn;
       if(!isFinite(x)) throw new Error('Diverged — try a different x₀');
       if(err<tol){conv=true;break;}
     }
-    document.getElementById('rv-val').textContent='x ≈ '+fmt(x);
-    document.getElementById('rv-meta').textContent='f(root) = '+fmt(f(x,0))+'  ·  '+rows.length+' iteration'+(rows.length!==1?'s':'')+'  ·  '+(conv?'✓ Converged':'⚠ Max reached');
+    document.getElementById('rv-val').textContent='x ≈ '+fmt(x,'v');
+    document.getElementById('rv-meta').textContent='f(root) = '+fmt(f(x,0),'v')+'  ·  '+rows.length+' iteration'+(rows.length!==1?'s':'')+'  ·  '+(conv?'✓ Converged':'⚠ Max reached');
     document.getElementById('rv-note').textContent=useNum?'f′(x) auto-estimated via central difference':'';
     document.getElementById('rv-tb').innerHTML=rows.map(function(r,i){
-      return '<tr class="'+(i===rows.length-1?'fin':'')+'"><td>'+r[0]+'</td><td>'+fmt(r[1])+'</td><td>'+fmt(r[2])+'</td><td>'+fmt(r[3])+'</td><td>'+fmt(r[4])+'</td><td>'+fmt(r[5])+'</td></tr>';
+      return '<tr class="'+(i===rows.length-1?'fin':'')+'"><td>'+r[0]+'</td><td>'+fmt(r[1],'v')+'</td><td>'+fmt(r[2],'v')+'</td><td>'+fmt(r[3],'v')+'</td><td>'+fmt(r[4],'v')+'</td><td>'+fmt(r[5],'v')+'</td></tr>';
     }).join('');
     showR('rc-v','ev-empty');
     vswitch('v','tbl');
     drawNRCharts(f, rows, x);
-    toast('Root ≈ '+fmt(x,6),'ok');
+    toast('Root ≈ '+fmt(x,'v'),'ok');
   } catch(e){ toast(e.message,'err'); }
 }
 
@@ -745,15 +803,15 @@ function runG(){
       total+=ci;
       rows.push([i,xs[i],ys[i],Li,ci]);
     }
-    document.getElementById('rg-val').textContent='P('+xv+') ≈ '+fmt(total);
+    document.getElementById('rg-val').textContent='P('+xv+') ≈ '+fmt(total,'g');
     document.getElementById('rg-meta').textContent=n+' data points  ·  Degree '+(n-1)+' polynomial';
     document.getElementById('rg-tb').innerHTML=rows.map(function(r){
-      return '<tr><td>'+r[0]+'</td><td>'+fmt(r[1])+'</td><td>'+fmt(r[2])+'</td><td>'+fmt(r[3])+'</td><td>'+fmt(r[4])+'</td></tr>';
-    }).join('')+'<tr class="tot"><td colspan="4" style="text-align:right;padding-right:1.2rem">P('+xv+') = Σ</td><td>'+fmt(total)+'</td></tr>';
+      return '<tr><td>'+r[0]+'</td><td>'+fmt(r[1],'g')+'</td><td>'+fmt(r[2],'g')+'</td><td>'+fmt(r[3],'g')+'</td><td>'+fmt(r[4],'g')+'</td></tr>';
+    }).join('')+'<tr class="tot"><td colspan="4" style="text-align:right;padding-right:1.2rem">P('+xv+') = Σ</td><td>'+fmt(total,'g')+'</td></tr>';
     showR('rc-g','eg-empty');
     vswitch('g','tbl');
     drawLGCharts(xs, ys, xv, rows, total);
-    toast('P('+xv+') ≈ '+fmt(total,6),'ok');
+    toast('P('+xv+') ≈ '+fmt(total,'g'),'ok');
   } catch(e){ toast(e.message,'err'); }
 }
 
@@ -779,22 +837,22 @@ function runO(){
       rows.push([cnt,x,y,fv,dy,yn]);
       x=parseFloat((x+hs).toFixed(10)); y=yn; cnt++;
     }
-    document.getElementById('ro-val').textContent='y('+xe+') ≈ '+fmt(y);
+    document.getElementById('ro-val').textContent='y('+xe+') ≈ '+fmt(y,'o');
     document.getElementById('ro-meta').textContent=rows.length+' step'+(rows.length!==1?'s':'')+'  ·  h = '+h;
     var disp=rows.length>90?rows.slice(0,89):rows;
     var html=disp.map(function(r,i){
-      return '<tr class="'+(i===disp.length-1&&rows.length<=90?'fin':'')+'"><td>'+r[0]+'</td><td>'+fmt(r[1])+'</td><td>'+fmt(r[2])+'</td><td>'+fmt(r[3])+'</td><td>'+fmt(r[4])+'</td><td>'+fmt(r[5])+'</td></tr>';
+      return '<tr class="'+(i===disp.length-1&&rows.length<=90?'fin':'')+'"><td>'+r[0]+'</td><td>'+fmt(r[1],'o')+'</td><td>'+fmt(r[2],'o')+'</td><td>'+fmt(r[3],'o')+'</td><td>'+fmt(r[4],'o')+'</td><td>'+fmt(r[5],'o')+'</td></tr>';
     }).join('');
     if(rows.length>90){
       var last=rows[rows.length-1];
       html+='<tr><td class="ttrunc" colspan="6">⋯ '+(rows.length-89)+' rows hidden ⋯</td></tr>';
-      html+='<tr class="fin"><td>'+last[0]+'</td><td>'+fmt(last[1])+'</td><td>'+fmt(last[2])+'</td><td>'+fmt(last[3])+'</td><td>'+fmt(last[4])+'</td><td>'+fmt(last[5])+'</td></tr>';
+      html+='<tr class="fin"><td>'+last[0]+'</td><td>'+fmt(last[1],'o')+'</td><td>'+fmt(last[2],'o')+'</td><td>'+fmt(last[3],'o')+'</td><td>'+fmt(last[4],'o')+'</td><td>'+fmt(last[5],'o')+'</td></tr>';
     }
     document.getElementById('ro-tb').innerHTML=html;
     showR('rc-o','eo-empty');
     vswitch('o','tbl');
     drawEUCharts(rows);
-    toast('y('+xe+') ≈ '+fmt(y,6),'ok');
+    toast('y('+xe+') ≈ '+fmt(y,'o'),'ok');
   } catch(e){ toast(e.message,'err'); }
 }
 
